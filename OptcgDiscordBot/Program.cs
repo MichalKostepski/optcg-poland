@@ -1,4 +1,4 @@
-﻿
+﻿using System.Runtime.CompilerServices;
 using Discord;
 using Discord.WebSocket;
 
@@ -56,13 +56,25 @@ Task HandleMessage(SocketMessage message)
             string[] messageContentSplitLines = messageContent.Split('\n');
             foreach (string line in messageContentSplitLines)
             {
-                if (line.StartsWith("1."))
-                {
-                    Console.WriteLine(line);
-                }
+                string cleanLine = line.Trim();
+                int ranking = GetRanking(cleanLine);
+                Console.WriteLine(ranking);
             }
         }
     }
 
     return Task.CompletedTask;
+}
+string GetRanking(string line)
+{
+    string result = "";
+    for (int i = 0; i < line.Length ; i ++)
+    {
+        char character = line[i];
+        if (!char.IsDigit(line[i]))
+        {
+            break;
+        }
+        result = result + character;
+    }
 }
