@@ -1,6 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using Discord;
 using Discord.WebSocket;
+using OptcgPoland.Core.Parsing;
+using OptcgPoland.Core.Models;
 
 // Konfiguracja
 const string ResultsCategoryName = "WYNIKI TURNIEJÓW";
@@ -52,22 +54,22 @@ Task HandleMessage(SocketMessage message)
     {
         if (textChannel.Category?.Name == ResultsCategoryName)
         {
-            string messageContent = message.Content;
-            string[] messageContentSplitLines = messageContent.Split('\n');
-            foreach (string line in messageContentSplitLines)
+            TournamentTextParser parser = new TournamentTextParser();
+            List<ParsedPlacement> parsedPlacementList = parser.ParseMessage(message.Content);
+            foreach (ParsedPlacement result in parsedPlacementList)
             {
-                string cleanLine = line.Trim();
-                int ranking = GetRanking(cleanLine);
-                Console.WriteLine(ranking);
+                Console.WriteLine($"Miejsce: {result.Place} | Lider: {result.RawText}");
             }
         }
     }
 
     return Task.CompletedTask;
 }
+
 string GetRanking(string line)
 {
     string result = "";
+    int counterForReadLetters = 0;
     for (int i = 0; i < line.Length ; i ++)
     {
         char character = line[i];
@@ -76,5 +78,36 @@ string GetRanking(string line)
             break;
         }
         result = result + character;
+        counterForReadLetters++;
     }
+    if (counterForReadLetters < line.Length && line[counterForReadLetters] == '.' && result.Length > 0 )
+    {
+         return result;
+    }
+    return "X";
+    
+}
+
+string GetLeader(string line)
+{
+    string leaderName = "";
+    if ( GetRanking(line) == "X")
+    {
+        return "-";
+    }
+    bool findFirstLetter = false;
+    for (int i = line.IndexOf('.');i < line.Length; i ++)
+    {
+        if (char.IsLetter(line[i]))
+        {
+            findFirstLetter = true;
+        }
+        if (findFirstLetter)
+        {
+            leaderName = leaderName + line[i];
+        }
+        
+    }
+    return leaderName.Trim();
+
 }

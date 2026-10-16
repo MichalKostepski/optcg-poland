@@ -71,6 +71,21 @@ public class TournamentTextParser
         return result;
     }
 
+    public List<ParsedPlacement> ParseMessage  (string message)
+    {
+        List<ParsedPlacement> parsedPlacementList = new List<ParsedPlacement>();
+        string[] messageLines = message.Split('\n');
+        foreach(string line in messageLines)
+        {
+            ParsedPlacement? parsedPlacement = ParseLine(line);
+            if (parsedPlacement is not null)
+            {
+                parsedPlacementList.Add(parsedPlacement);
+            }
+        }
+        return parsedPlacementList;
+    }
+
     private static bool IsPlayerCount(string text)
     {
         string normalizedText = NormalizeText(text);

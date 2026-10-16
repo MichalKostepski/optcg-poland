@@ -53,4 +53,34 @@ public class TournamentTextParserTests
 
         Assert.Null(result);
     }
+    
+    [Fact]
+    public void ParseMessage_MultiplePlacements_ReturnsCorrectList()
+    {
+        // Arrange - przygotowanie danych
+        TournamentTextParser parser = new TournamentTextParser();
+
+        string message = """
+            Weekly Kraków
+            16 graczy
+
+            1. U Crocodile
+            2) B Shanks
+            3 P Enel
+            4. ?
+            """;
+
+        // Act - uruchomienie testowanej metody
+        List<ParsedPlacement> results = parser.ParseMessage(message);
+
+        // Assert - sprawdzenie wyników
+        Assert.Equal(4, results.Count);
+
+        Assert.Equal(1, results[0].Place);
+        Assert.Equal("U Crocodile", results[0].RawText);
+
+        Assert.Equal(4, results[3].Place);
+        Assert.Equal("?", results[3].RawText);
+        }
+
 }
