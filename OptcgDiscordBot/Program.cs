@@ -3,11 +3,14 @@ using Discord;
 using Discord.WebSocket;
 using OptcgPoland.Core.Parsing;
 using OptcgPoland.Core.Models;
+using OptcgPoland.Data;
 
 // Konfiguracja
 const string ResultsCategoryName = "WYNIKI TURNIEJÓW";
+const string CurrentMetaSetCode = "op17";
 
 DiscordSocketConfig config = new DiscordSocketConfig();
+TournamentTextParser parser = new TournamentTextParser();
 
 config.GatewayIntents =
     GatewayIntents.Guilds |
@@ -25,6 +28,14 @@ if (!ValidateDiscordBotToken(discordBotToken))
 {
     return;
 }
+
+// Inicjalizacja bazy danych
+Console.WriteLine("START INICJALIZACJI BAZY");
+
+TournamentRepository repository = new TournamentRepository();
+repository.InitializeDatabase();
+
+Console.WriteLine("KONIEC INICJALIZACJI BAZY");
 
 // Uruchomienie bota
 await client.LoginAsync(TokenType.Bot, discordBotToken);
@@ -48,66 +59,54 @@ bool ValidateDiscordBotToken(string? token)
 
 
 // Obsługa wiadomości
+
 Task HandleMessage(SocketMessage message)
 {
-    if (message.Channel is SocketTextChannel textChannel)
+    if (message.Channel is not SocketTextChannel textChannel)
     {
-        if (textChannel.Category?.Name == ResultsCategoryName)
-        {
-            TournamentTextParser parser = new TournamentTextParser();
-            List<ParsedPlacement> parsedPlacementList = parser.ParseMessage(message.Content);
-            foreach (ParsedPlacement result in parsedPlacementList)
-            {
-                Console.WriteLine($"Miejsce: {result.Place} | Lider: {result.RawText}");
-            }
-        }
+        return Task.CompletedTask;
     }
+
+    if (textChannel.Category?.Name != ResultsCategoryName)
+    {
+        return Task.CompletedTask;
+    }
+
+    // Odczyt wyników z wiadomości
+    List<ParsedPlacement> results = parser.ParseMessage(message.Content);
+
+    if (results.Count == 0)
+    {
+        return Task.CompletedTask;
+    }
+
+    // Utworzenie obiektu turnieju
+    Tournament tournament = new Tournament(
+        textChannel.Name,
+        CurrentMetaSetCode,
+        results
+    );
+
+    // Wyświetlenie informacji o turnieju
+    Console.WriteLine();
+    Console.WriteLine("========== TURNIEJ ==========");
+    Console.WriteLine($"Miasto: {tournament.City}");
+    Console.WriteLine($"Dodatek: {tournament.MetaSetCode}");
+    Console.WriteLine($"Format: {tournament.Format}");
+    Console.WriteLine($"Liczba wyników: {tournament.Placements.Count}");
+    Console.WriteLine();
+
+    // Wyświetlenie wyników
+    foreach (ParsedPlacement placement in tournament.Placements)
+    {
+        Console.WriteLine(
+            $"{placement.Place}. {placement.RawText}"
+        );
+    }
+
+    Console.WriteLine("=============================");
+    Console.WriteLine();
 
     return Task.CompletedTask;
 }
 
-string GetRanking(string line)
-{
-    string result = "";
-    int counterForReadLetters = 0;
-    for (int i = 0; i < line.Length ; i ++)
-    {
-        char character = line[i];
-        if (!char.IsDigit(line[i]))
-        {
-            break;
-        }
-        result = result + character;
-        counterForReadLetters++;
-    }
-    if (counterForReadLetters < line.Length && line[counterForReadLetters] == '.' && result.Length > 0 )
-    {
-         return result;
-    }
-    return "X";
-    
-}
-
-string GetLeader(string line)
-{
-    string leaderName = "";
-    if ( GetRanking(line) == "X")
-    {
-        return "-";
-    }
-    bool findFirstLetter = false;
-    for (int i = line.IndexOf('.');i < line.Length; i ++)
-    {
-        if (char.IsLetter(line[i]))
-        {
-            findFirstLetter = true;
-        }
-        if (findFirstLetter)
-        {
-            leaderName = leaderName + line[i];
-        }
-        
-    }
-    return leaderName.Trim();
-
-}

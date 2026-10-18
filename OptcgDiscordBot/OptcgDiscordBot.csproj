@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OptcgPoland.Core\OptcgPoland.Core.csproj" />
+    <ProjectReference Include="..\OptcgPoland.Data\OptcgPoland.Data.csproj" />
   </ItemGroup>
 
 </Project>
