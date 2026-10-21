@@ -35,6 +35,30 @@ Console.WriteLine("START INICJALIZACJI BAZY");
 TournamentRepository repository = new TournamentRepository();
 repository.InitializeDatabase();
 
+if (args.Contains("--test-db"))
+{
+    List<ParsedPlacement> testResults = new List<ParsedPlacement>
+    {
+        new ParsedPlacement { Place = 1, RawText = "U Crocodile" },
+        new ParsedPlacement { Place = 2, RawText = "B Shanks" },
+        new ParsedPlacement { Place = 3, RawText = "P Enel" }
+    };
+
+    Tournament testTournament = new Tournament(
+        "krakow",
+        "OP17",
+        testResults
+    );
+
+    testTournament.StoreName = "Testowy Sklep";
+    testTournament.Date = new DateOnly(2026, 10, 18);
+
+    repository.SaveTournament(testTournament);
+
+    Console.WriteLine("Test zapisu do SQLite zakończony!");
+    return;
+}
+
 Console.WriteLine("KONIEC INICJALIZACJI BAZY");
 
 // Uruchomienie bota
